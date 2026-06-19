@@ -3,7 +3,7 @@ import pandas as pd
 import random
 
 # Page 설정
-st.set_page_config(page_title="서울 역대 날씨 맞추기 퀴즈", page_icon="🌤️", layout="centered")
+st.set_page_config(page_title="우리 반 날씨 맞추기 퀴즈", page_icon="🌤️", layout="centered")
 
 # 1. 데이터 로드 및 전처리
 @st.cache_data
@@ -27,8 +27,8 @@ except Exception as e:
 # 2. 고정된 메인 타이틀
 st.title("🌤️ 내 기억 속 가장 극단적인 날씨는?")
 st.markdown("""
-1907년부터 2026년까지의 서울 기온 데이터를 바탕으로 출제되는 퀴즈입니다!  
-특정 날짜를 선택하고, 그날 **가장 더웠던 해** 혹은 **가장 추웠던 해**를 맞춰보세요.
+우리 반 친구들의 기억력을 시험해보는 날씨 퀴즈입니다!  
+특정 날짜를 선택하고, **우리가 살아온 시대(2010년~2026년)** 중 그날 가장 더웠던 해나 추웠던 해를 맞춰보세요!
 """)
 st.divider()
 
@@ -44,11 +44,12 @@ target_month = st.sidebar.selectbox("월 선택", list(range(1, 13)), index=7) #
 max_days = 30 if target_month in [4, 6, 9, 11] else (29 if target_month == 2 else 31)
 target_day = st.sidebar.selectbox("일 선택", list(range(1, max_days + 1)), index=0) # 기본값 1일
 
-# 4. 퀴즈 상태 관리 (새로고침 시 데이터 유지)
+# 4. 퀴즈 상태 관리 (2010년 이후 데이터만 사용하도록 필터링 조건 추가 🛠️)
 current_quiz_id = f"{target_month}_{target_day}_{is_hot_mode}"
 
 if "quiz_id" not in st.session_state or st.session_state["quiz_id"] != current_quiz_id:
-    filtered_df = df[(df['월'] == target_month) & (df['일'] == target_day)]
+    # ★ 중1 학생들을 위해 2010년 이후 데이터만 필터링합니다!
+    filtered_df = df[(df['월'] == target_month) & (df['일'] == target_day) & (df['연도'] >= 2010)]
     
     if not filtered_df.empty:
         if is_hot_mode:
@@ -61,7 +62,7 @@ if "quiz_id" not in st.session_state or st.session_state["quiz_id"] != current_q
         correct_year = int(sorted_df.iloc[0]['연도'])
         correct_temp = sorted_df.iloc[0][target_col]
         
-        # 보기 4개 만들기
+        # 보기 4개 만들기 (데이터가 부족하면 2010년 이후 연도 중 무작위 추가)
         top_years = sorted_df.head(4)['연도'].astype(int).tolist()
         while len(top_years) < 4:
             random_year = random.choice(filtered_df['연도'].unique())
@@ -69,15 +70,13 @@ if "quiz_id" not in st.session_state or st.session_state["quiz_id"] != current_q
                 top_years.append(int(random_year))
         random.shuffle(top_years)
         
-        # 힌트 설정
-        if correct_year < 1950:
-            hint_text = "힌트: 6·25 전쟁이 일어나기 전인 20세기 전반기 역사 속의 해입니다!"
-        elif correct_year < 1980:
-            hint_text = "힌트: 1950년대~1970년대 사이, 대한민국 근대화·산업화가 한창 진행되던 시절입니다."
-        elif correct_year < 2000:
-            hint_text = "힌트: 1980년대~1990년대 사이입니다. 대중문화의 황금기 시절이네요!"
+        # 중1 눈높이에 맞춘 힌트 메시지 🛠️
+        if correct_year == 2018:
+            hint_text = "힌트: 대구보다 서울이 더 더웠다고 난리 났던 역대급 폭염의 해입니다! 초등학교 입학하기 전쯤이었을 걸요?"
+        elif correct_year >= 2020:
+            hint_text = f"힌트: 2020년대에 들어선 이후입니다. 비교적 아주 최근의 기억이에요! ({correct_year}년)"
         else:
-            hint_text = f"힌트: 2000년 이후 스마트폰 보급기 이후의 시대입니다. ({correct_year // 10 * 10}년대)"
+            hint_text = f"힌트: 2010년대 중반기(2010년~2019년 사이)입니다. 여러분이 아주 어렸을 때예요!"
 
         # 세션에 고정 저장
         st.session_state["quiz_id"] = current_quiz_id
@@ -90,7 +89,7 @@ if "quiz_id" not in st.session_state or st.session_state["quiz_id"] != current_q
 # 5. 화면에 문제 표시
 st.subheader(f"📅 {target_month}월 {target_day}일의 날씨 퀴즈")
 mode_text = "가장 더웠던(최고기온 높은) 해" if is_hot_mode else "가장 추웠던(최저기온 낮은) 해"
-st.markdown(f"### Q. 역대 서울에서 이날 **{mode_text}**는 언제였을까요?")
+st.markdown(f"### Q. **2010년~2026년 중** 서울에서 이날 **{mode_text}**는 언제였을까요?")
 
 options_str = [f"{y}년" for y in st.session_state["options"]]
 user_choice = st.radio("정답이라고 생각하는 연도를 선택하세요:", options_str, key="user_choice_radio")
@@ -112,10 +111,10 @@ if st.session_state["answered"]:
     selected_year = int(st.session_state["user_choice_radio"].replace("년", ""))
     
     if selected_year == st.session_state["correct_year"]:
-        st.success(f"🎉 **정답입니다!! 대단하시네요!**")
+        st.success(f"🎉 **정답입니다!! 너희들 기억력 진짜 좋다!**")
         st.balloons()
     else:
-        st.error(f"😢 **아쉽게도 틀렸습니다!** 다른 연도를 골라보거나 아래 통계를 확인해 보세요.")
+        st.error(f"😢 **아쉽게도 틀렸습니다!** 아래 그래프를 보면서 정답을 확인해봐요.")
         
     st.markdown(f"""
     **🔍 정답 해설:**
@@ -123,22 +122,22 @@ if st.session_state["answered"]:
     * **그날의 기온:** {st.session_state['correct_temp']} ℃
     """)
     
-    # 6. 통계 및 그래프 시각화 (오타 수정된 부분 🛠️)
+    # 6. 통계 및 그래프 시각화 (여기는 1907년부터 전체 트렌드를 보여주어 기후 변화를 깨닫게 합니다 🌍)
     st.divider()
     st.subheader(f"📊 역대 {target_month}월 {target_day}일 기온 트렌드 (1907-2026)")
+    st.markdown("퀴즈는 최근 15년 데이터로 냈지만, **100년 전부터 기온이 어떻게 변해왔는지** 그래프로 확인해 보세요!")
     
     chart_df = df[(df['월'] == target_month) & (df['일'] == target_day)].sort_values(by='연도')
-    
-    # '연度' -> '연도'로 올바르게 수정 완료!
     chart_data = chart_df.set_index('연도')[['평균기온(℃)', '최저기온(℃)', '최고기온(℃)']]
     st.line_chart(chart_data)
     
-    # 순위 표
-    st.subheader(f"🔝 역대 {target_month}월 {target_day}일 기온 순위 Top 3")
+    # 순위 표 (최근 15년 기준 순위)
+    st.subheader(f"🔝 2010년 이후 {target_month}월 {target_day}일 기온 순위 Top 3")
+    recent_chart_df = chart_df[chart_df['연도'] >= 2010]
     if is_hot_mode:
-        rank_df = chart_df.sort_values(by='최고기온(℃)', ascending=False).head(3)
+        rank_df = recent_chart_df.sort_values(by='최고기온(℃)', ascending=False).head(3)
     else:
-        rank_df = chart_df.sort_values(by='최저기온(℃)', ascending=True).head(3)
+        rank_df = recent_chart_df.sort_values(by='최저기온(℃)', ascending=True).head(3)
         
     rank_df['순위'] = ["1위 (정답)", "2위", "3위"]
     display_df = rank_df[['순위', '연도', '평균기온(℃)', '최저기온(℃)', '최고기온(℃)']].set_index('순위')
