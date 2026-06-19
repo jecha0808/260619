@@ -18,7 +18,7 @@ st.markdown("""
 
 .title {
     text-align:center;
-    color:white;
+    color:black;
     font-size:3rem;
     font-weight:800;
     margin-bottom:10px;
