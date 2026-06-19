@@ -44,11 +44,9 @@ target_month = st.sidebar.selectbox("월 선택", list(range(1, 13)), index=7) #
 max_days = 30 if target_month in [4, 6, 9, 11] else (29 if target_month == 2 else 31)
 target_day = st.sidebar.selectbox("일 선택", list(range(1, max_days + 1)), index=0) # 기본값 1일
 
-# 4. 핵심: 퀴즈 상태 관리 (새로고침 시 데이터 유지)
-# 현재 사용자가 선택한 문제의 고유 키 생성
+# 4. 퀴즈 상태 관리 (새로고침 시 데이터 유지)
 current_quiz_id = f"{target_month}_{target_day}_{is_hot_mode}"
 
-# 만약 처음 실행되거나, 사용자가 날짜/모드를 바꿨다면 문제를 새로 생성합니다.
 if "quiz_id" not in st.session_state or st.session_state["quiz_id"] != current_quiz_id:
     filtered_df = df[(df['월'] == target_month) & (df['일'] == target_day)]
     
@@ -79,25 +77,22 @@ if "quiz_id" not in st.session_state or st.session_state["quiz_id"] != current_q
         elif correct_year < 2000:
             hint_text = "힌트: 1980년대~1990년대 사이입니다. 대중문화의 황금기 시절이네요!"
         else:
-            hint_text = f"힌트: 2000년 이후 스마트폰 가보급기 이후의 시대입니다. ({correct_year // 10 * 10}년대)"
+            hint_text = f"힌트: 2000년 이후 스마트폰 보급기 이후의 시대입니다. ({correct_year // 10 * 10}년대)"
 
-        # 세션에 고정 저장 (정답을 눌러도 이 값들은 변하지 않음)
+        # 세션에 고정 저장
         st.session_state["quiz_id"] = current_quiz_id
         st.session_state["correct_year"] = correct_year
         st.session_state["correct_temp"] = correct_temp
         st.session_state["options"] = top_years
         st.session_state["hint_text"] = hint_text
-        st.session_state["answered"] = False # 정답 확인 버튼 클릭 여부
+        st.session_state["answered"] = False
 
 # 5. 화면에 문제 표시
 st.subheader(f"📅 {target_month}월 {target_day}일의 날씨 퀴즈")
 mode_text = "가장 더웠던(최고기온 높은) 해" if is_hot_mode else "가장 추웠던(최저기온 낮은) 해"
 st.markdown(f"### Q. 역대 서울에서 이날 **{mode_text}**는 언제였을까요?")
 
-# 세션에 저장된 고정 보기를 가져와서 라디오 버튼 생성
 options_str = [f"{y}년" for y in st.session_state["options"]]
-
-# 사용자가 선택한 보기도 세션으로 관리하여 리셋 방지
 user_choice = st.radio("정답이라고 생각하는 연도를 선택하세요:", options_str, key="user_choice_radio")
 
 col1, col2 = st.columns([1, 4])
@@ -109,7 +104,6 @@ with col2:
 if show_hint:
     st.info(st.session_state["hint_text"])
 
-# 정답 버튼을 누르면 상태를 고정시킴
 if submit_btn:
     st.session_state["answered"] = True
 
@@ -129,13 +123,14 @@ if st.session_state["answered"]:
     * **그날의 기온:** {st.session_state['correct_temp']} ℃
     """)
     
-    # 6. 통계 및 그래프 시각화 (정답 확인 후에만 등장)
+    # 6. 통계 및 그래프 시각화 (오타 수정된 부분 🛠️)
     st.divider()
     st.subheader(f"📊 역대 {target_month}월 {target_day}일 기온 트렌드 (1907-2026)")
     
     chart_df = df[(df['월'] == target_month) & (df['일'] == target_day)].sort_values(by='연도')
-    chart_data = chart_df.set_index('연度')[['평균기온(℃)', '최저기온(℃)', '최고기온(℃)']]
     
+    # '연度' -> '연도'로 올바르게 수정 완료!
+    chart_data = chart_df.set_index('연도')[['평균기온(℃)', '최저기온(℃)', '최고기온(℃)']]
     st.line_chart(chart_data)
     
     # 순위 표
