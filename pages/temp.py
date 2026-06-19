@@ -44,11 +44,10 @@ target_month = st.sidebar.selectbox("월 선택", list(range(1, 13)), index=7) #
 max_days = 30 if target_month in [4, 6, 9, 11] else (29 if target_month == 2 else 31)
 target_day = st.sidebar.selectbox("일 선택", list(range(1, max_days + 1)), index=0) # 기본값 1일
 
-# 4. 퀴즈 상태 관리 (2010년 이후 데이터만 사용하도록 필터링 조건 추가 🛠️)
+# 4. 퀴즈 상태 관리
 current_quiz_id = f"{target_month}_{target_day}_{is_hot_mode}"
 
 if "quiz_id" not in st.session_state or st.session_state["quiz_id"] != current_quiz_id:
-    # ★ 중1 학생들을 위해 2010년 이후 데이터만 필터링합니다!
     filtered_df = df[(df['월'] == target_month) & (df['일'] == target_day) & (df['연도'] >= 2010)]
     
     if not filtered_df.empty:
@@ -62,7 +61,7 @@ if "quiz_id" not in st.session_state or st.session_state["quiz_id"] != current_q
         correct_year = int(sorted_df.iloc[0]['연도'])
         correct_temp = sorted_df.iloc[0][target_col]
         
-        # 보기 4개 만들기 (데이터가 부족하면 2010년 이후 연도 중 무작위 추가)
+        # 보기 4개 만들기
         top_years = sorted_df.head(4)['연도'].astype(int).tolist()
         while len(top_years) < 4:
             random_year = random.choice(filtered_df['연도'].unique())
@@ -70,13 +69,25 @@ if "quiz_id" not in st.session_state or st.session_state["quiz_id"] != current_q
                 top_years.append(int(random_year))
         random.shuffle(top_years)
         
-        # 중1 눈높이에 맞춘 힌트 메시지 🛠️
+        # 🔥 [수정] 정답 연도를 절대 유출하지 않는 중1 맞춤형 사건 힌트!
         if correct_year == 2018:
-            hint_text = "힌트: 대구보다 서울이 더 더웠다고 난리 났던 역대급 폭염의 해입니다! 초등학교 입학하기 전쯤이었을 걸요?"
-        elif correct_year >= 2020:
-            hint_text = f"힌트: 2020년대에 들어선 이후입니다. 비교적 아주 최근의 기억이에요! ({correct_year}년)"
+            hint_text = "💡 힌트: 대구보다 서울이 더 덥다고 난리 났던 역대급 서프리카 폭염의 해! 방탄소년단(BTS)이 빌보드 앨범 차트에서 처음으로 1위를 한 해이기도 해요."
+        elif correct_year == 2020:
+            hint_text = "💡 힌트: 전 세계적으로 코로나19가 대유행하기 시작해서 학교도 제대로 못 가고 온라인 수업을 들었던 기억 속의 첫 해입니다."
+        elif correct_year == 2021:
+            hint_text = "💡 힌트: 넷플릭스 드라마 '오징어 게임'이 전 세계적으로 엄청난 대유행을 일으켰던 해입니다!"
+        elif correct_year == 2022:
+            hint_text = "💡 힌트: 겨울에 카타르 월드컵이 열려서 대한민국이 기적으로 16강에 진출해 '중요한 건 꺾이지 않는 마음(중꺾마)'이라는 유행어가 돌던 해입니다."
+        elif correct_year == 2023:
+            hint_text = "💡 힌트: 비교적 최근이에요! 기후 변화로 인해 전 세계가 '지구 온난화'를 넘어 '지구 열대화' 시대에 진입했다고 선포된 작년 직전 해입니다."
+        elif correct_year == 2024:
+            hint_text = "💡 힌트: 파리 올림픽이 개최되었던 해입니다! 삐약이 신유빈 선수나 사격 김예지 선수가 화제가 되었던 기억이 나나요?"
+        elif correct_year >= 2025:
+            hint_text = "💡 힌트: 정말 엄청나게 최근입니다. 여러분이 초등학교 고학년이거나 중학생이 된 후의 아주 생생한 기억입니다!"
+        elif correct_year <= 2012:
+            hint_text = "💡 힌트: 2010년대 극초반입니다. 싸이의 '강남스타일'이 전 세계를 휩쓸며 전 국민이 말춤을 추던 시절입니다."
         else:
-            hint_text = f"힌트: 2010년대 중반기(2010년~2019년 사이)입니다. 여러분이 아주 어렸을 때예요!"
+            hint_text = "💡 힌트: 2010년대 중후반기입니다. 여러분이 아장아장 걷거나 유치원에 다니며 세상을 배우고 있던 아주 어릴 적 시절입니다."
 
         # 세션에 고정 저장
         st.session_state["quiz_id"] = current_quiz_id
@@ -122,16 +133,16 @@ if st.session_state["answered"]:
     * **그날의 기온:** {st.session_state['correct_temp']} ℃
     """)
     
-    # 6. 통계 및 그래프 시각화 (여기는 1907년부터 전체 트렌드를 보여주어 기후 변화를 깨닫게 합니다 🌍)
+    # 6. 통계 및 그래프 시각화
     st.divider()
     st.subheader(f"📊 역대 {target_month}월 {target_day}일 기온 트렌드 (1907-2026)")
     st.markdown("퀴즈는 최근 15년 데이터로 냈지만, **100년 전부터 기온이 어떻게 변해왔는지** 그래프로 확인해 보세요!")
     
     chart_df = df[(df['월'] == target_month) & (df['일'] == target_day)].sort_values(by='연도')
-    chart_data = chart_df.set_index('연도')[['평균기온(℃)', '최저기온(℃)', '최고기온(℃)']]
+    chart_data = chart_df.set_index('연度' if '연度' in df.columns else '연도')[['평균기온(℃)', '최저기온(℃)', '최고기온(℃)']]
     st.line_chart(chart_data)
     
-    # 순위 표 (최근 15년 기준 순위)
+    # 순위 표
     st.subheader(f"🔝 2010년 이후 {target_month}월 {target_day}일 기온 순위 Top 3")
     recent_chart_df = chart_df[chart_df['연도'] >= 2010]
     if is_hot_mode:
