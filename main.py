@@ -68,4 +68,34 @@ mbti_jobs = {
 # 4. 사용자 입력 UI
 st.write("### 👇 나의 MBTI를 선택해보세요!")
 
-mbti_list = sorted(list(mbti
+mbti_list = sorted(list(mbti_jobs.keys()))
+selected_mbti = st.selectbox("나의 성격 유형은 무엇인가요?", mbti_list, index=0)
+
+st.markdown("---")
+
+# 5. 결과 출력 화면
+if selected_mbti:
+    info = mbti_jobs[selected_mbti]
+    
+    # 풍선 효과 애니메이션
+    st.balloons()
+    
+    # 결과 헤더
+    st.markdown(f"### 🎉 당신은 **{selected_mbti} ({info['title']})** 이군요!")
+    st.info(f"💡 **성격 특징:** {info['desc']}")
+    
+    st.write("#### 🔍 추천하는 대표 직업군")
+    
+    # 2열(Column) 구조 배치
+    cols = st.columns(2)
+    for idx, job in enumerate(info['jobs']):
+        with cols[idx % 2]:
+            st.markdown(f"""
+                <div class="job-card">
+                    <h4 class="recommend-title">✨ {job}</h4>
+                    <p style="margin: 0; color: #555; font-size: 0.9rem;">이 직업은 당신의 성격적 장점을 잘 발휘할 수 있는 분야입니다.</p>
+                </div>
+            """, unsafe_allowed_html=True)
+            
+    # 하단 격려 메시지
+    st.success("🌟 MBTI는 진로 탐색을 위한 참고용일 뿐이에요! 여러분의 가능성은 무궁무진합니다.")
